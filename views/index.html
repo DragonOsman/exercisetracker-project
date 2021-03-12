@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-us">
 
    <head>
-      <title>Exercise Tracker | Free Code Camp</title>
-      <link rel="shortcut icon" href="https://cdn.freecodecamp.org/universal/favicons/favicon-32x32.png" type="image/x-icon"/>
-      <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
-      <link href="style.css" rel="stylesheet" type="text/css">
+      <title>Exercise Tracker | DragonOsman</title>
+      <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+      <link href="../public/style.css" rel="stylesheet" />
+      <link rel="shortcut icon" href="favicon.ico" />
+      <link rel="icon" type="image/gif" href="animated_favicon1.gif" />
    </head>
 
    <body>
-      <div class="container">
+      <main class="container">
          <h1>Exercise tracker</h1>
           <form action="/api/exercise/new-user" method="post">
             <h3>Create a New User</h3>
@@ -29,7 +30,7 @@
           <p><strong>GET users's exercise log: </strong><code>GET /api/exercise/log?{userId}[&amp;from][&amp;to][&amp;limit]</code></p>
           <p><strong>{ }</strong> = required, <strong>[ ]</strong> = optional</p>
           <p><strong>from, to</strong> = dates (yyyy-mm-dd); <strong>limit</strong> = number</p>
-      </div>
+      </main>
    </body>
 
 </html>
