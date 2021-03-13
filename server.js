@@ -4,6 +4,17 @@ const cors = require("cors");
 require("dotenv").config();
 const path = require("path");
 const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
+
+mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+
+const Schema = mongoose.Schema;
+const userSchema = new Schema({
+  username: { Type: String, unique: true }, // can't have someone register more than once
+  _id: { Type: Number, unique: true }
+});
+
+const User = mongoose.model("user", userSchema);
 
 app.use(cors());
 app.use(express.static("public"));
@@ -15,7 +26,36 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.post("/api/exercise/new-user", (req, res) => {
-  console.log(`${req.body}`);
+  const username = req.body.username;
+
+  User.find({}, (err, users) => {
+    if (err) {
+      console.log(err);
+    }
+
+    const id = users.length;
+    const user = new User({
+      username: username,
+      _id: id
+    });
+
+    User.findOne({ username: username }, (err, foundUser) => {
+      if (err) {
+        console.log(err);
+      }
+
+      if (!foundUser) {
+        user.save((err, user) => {
+          if (err) {
+            console.log(err);
+          }
+          console.log(`user ${user.username} saved to database!`);
+        });
+      }
+    });
+
+    res.json({ user });
+  });
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
