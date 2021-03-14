@@ -10,8 +10,7 @@ mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology
 
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
-  username: { Type: String, unique: true }, // can't have someone register more than once
-  _id: { Type: Number, unique: true }
+  username: { type: String, unique: true } // can't have someone register more than once
 });
 
 const User = mongoose.model("user", userSchema);
@@ -34,9 +33,9 @@ app.post("/api/exercise/new-user", (req, res) => {
     }
 
     const id = users.length;
+
     const user = new User({
-      username: username,
-      _id: id
+      username: username
     });
 
     User.findOne({ username: username }, (err, foundUser) => {
@@ -49,12 +48,16 @@ app.post("/api/exercise/new-user", (req, res) => {
           if (err) {
             console.log(err);
           }
+
           console.log(`user ${user.username} saved to database!`);
+
+          res.json({
+            username: user.username,
+            _id: user._id
+          });
         });
       }
     });
-
-    res.json({ user });
   });
 });
 
