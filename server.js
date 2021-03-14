@@ -27,36 +27,27 @@ app.use(bodyParser.json());
 app.post("/api/exercise/new-user", (req, res) => {
   const username = req.body.username;
 
-  User.find({}, (err, users) => {
+  const user = new User({
+    username: username
+  });
+
+  User.findOne({ username: username }, (err, foundUser) => {
     if (err) {
       console.log(err);
     }
 
-    const id = users.length;
+    if (!foundUser) {
+      user.save((err, user) => {
+        if (err) {
+          console.log(err);
+        }
+        console.log(`user ${user.username} saved to database!`);
+      });
+    }
 
-    const user = new User({
-      username: username
-    });
-
-    User.findOne({ username: username }, (err, foundUser) => {
-      if (err) {
-        console.log(err);
-      }
-
-      if (!foundUser) {
-        user.save((err, user) => {
-          if (err) {
-            console.log(err);
-          }
-
-          console.log(`user ${user.username} saved to database!`);
-
-          res.json({
-            username: user.username,
-            _id: user._id
-          });
-        });
-      }
+    res.json({
+      username: user.username,
+      _id: user._id
     });
   });
 });
