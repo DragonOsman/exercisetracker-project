@@ -52,6 +52,48 @@ app.post("/api/exercise/new-user", (req, res) => {
   });
 });
 
+app.post("/api/exercise/add", (req, res) => {
+  const { userId, description, duration } = req.body;
+  const currentDate = new Date();
+
+  // use date provided by user or use current date
+  const date = req.body.date ||
+  `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+
+  User.findOne({ _id: userId }, (err, foundUser) => {
+    if (err) {
+      console.log(err);
+      res.json({ error: err });
+    }
+
+    res.json({
+      username: foundUser.username,
+      _id: foundUser._id,
+      description: description,
+      duration: duration,
+      date: date
+    });
+  });
+});
+
+app.get("/api/exercise/users", (req, res) => {
+  User.find({}, (err, foundUsers) => {
+    if (err) {
+      console.log(err);
+      res.json({ error: err });
+    }
+
+    if (foundUsers.length === 0) {
+      res.json({ error: "No users in database" });
+    }
+
+    res.json(foundUsers.map(user => {
+      const { __v, ...rest } = user._doc;
+      return rest;
+    }));
+  });
+});
+
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
 });
