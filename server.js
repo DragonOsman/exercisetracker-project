@@ -56,23 +56,40 @@ app.post("/api/exercise/add", (req, res) => {
   const { userId, description, duration } = req.body;
   const currentDate = new Date();
 
+  const makeTwoDigitMonth = (month) => {
+    return month.toString().length < 2
+      ? `0${month}`
+      : `${month}`;
+  };
+
   // use date provided by user or use current date
   const date = req.body.date ||
-  `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+  `${currentDate.getFullYear()}-${makeTwoDigitMonth(currentDate.getMonth() + 1)}-${currentDate.getDate()}`;
 
-  User.findOne({ _id: userId }, (err, foundUser) => {
+  User.findByIdAndUpdate(userId, {
+    $push:
+    {
+      exercises: [
+        {
+          description: description,
+          duration: duration,
+          date: date
+        }
+      ]
+    }
+  }, { new: true, strict: false, useFindAndModify: false }, (err, foundUser) => {
     if (err) {
       console.log(err);
       res.json({ error: err });
     }
 
-    res.json({
-      username: foundUser.username,
-      _id: foundUser._id,
-      description: description,
-      duration: duration,
-      date: date
-    });
+    if (foundUser) {
+      res.json({
+        username: foundUser.username,
+        _id: foundUser._id,
+        exercises: foundUser.exercises
+      });
+    }
   });
 });
 
@@ -91,6 +108,21 @@ app.get("/api/exercise/users", (req, res) => {
       const { __v, ...rest } = user._doc;
       return rest;
     }));
+  });
+});
+
+app.get("/api/exercise/log", (req, res) => {
+  const userId = req.params.userId;
+
+  User.findById(userId, (err, foundUser) => {
+    if (err) {
+      console.log(err);
+      res.json({ error: err });
+    }
+
+    if (foundUser) {
+      res.json(foundUser.exercises);
+    }
   });
 });
 
