@@ -53,18 +53,13 @@ app.post("/api/exercise/new-user", (req, res) => {
 });
 
 app.post("/api/exercise/add", (req, res) => {
-  const { userId, description, duration } = req.body;
+  const userId = req.body.userId;
+  const description = req.body.description;
+  const duration = Number(req.body.duration);
   const currentDate = new Date();
 
-  const makeTwoDigitMonth = (month) => {
-    return month.toString().length < 2
-      ? `0${month}`
-      : `${month}`;
-  };
-
   // use date provided by user or use current date
-  const date = req.body.date ||
-  `${currentDate.getFullYear()}-${makeTwoDigitMonth(currentDate.getMonth() + 1)}-${currentDate.getDate()}`;
+  const date = new Date(req.body.date).toDateString() || currentDate.toDateString();
 
   User.findByIdAndUpdate(userId, {
     $push:
