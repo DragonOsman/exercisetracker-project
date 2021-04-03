@@ -10,7 +10,8 @@ mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology
 
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
-  username: { type: String, unique: true } // can't have someone register more than once
+  username: { type: String, unique: true }, // can't have someone register more than once
+  exercises: { type: Array, unique: true }
 });
 
 const User = mongoose.model("user", userSchema);
@@ -62,15 +63,12 @@ app.post("/api/exercise/add", (req, res) => {
   const date = new Date(req.body.date).toDateString() || currentDate.toDateString();
 
   User.findByIdAndUpdate(userId, {
-    $push:
-    {
-      exercises: [
-        {
-          description: description,
-          duration: duration,
-          date: date
-        }
-      ]
+    $push: {
+      exercises: {
+        description: description,
+        duration: duration,
+        date: date
+      }
     }
   }, { new: true, strict: false, useFindAndModify: false }, (err, foundUser) => {
     if (err) {
