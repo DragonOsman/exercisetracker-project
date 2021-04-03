@@ -75,7 +75,7 @@ app.post("/api/exercise/add", (req, res) => {
         date: date
       }
     }
-  }, { new: true, strict: false, useFindAndModify: false }, (err, foundUser) => {
+  }, { new: true, useFindAndModify: false }, (err, foundUser) => {
     if (err) {
       console.log(err);
       res.json({ error: err });
