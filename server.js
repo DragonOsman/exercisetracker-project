@@ -9,14 +9,9 @@ const mongoose = require("mongoose");
 mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const Schema = mongoose.Schema;
-const exerciseSchema = new Schema({
-  description: String,
-  duration: Number,
-  date: Date
-});
 const userSchema = new Schema({
   username: { type: String, unique: true }, // can't have someone register more than once
-  exercises: [exerciseSchema]
+  exercises: { type: Array }
 });
 
 const User = mongoose.model("user", userSchema);
@@ -65,8 +60,8 @@ app.post("/api/exercise/add", (req, res) => {
   const currentDate = new Date();
 
   // use date provided by user or use current date
-  const date = new Date(req.body.date).toDateString() || currentDate.toDateString();
-
+  const reqDate = new Date(req.body.date);
+  const date = reqDate.toDateString() ? reqDate.toDateString() : currentDate.toDateString();
   User.findByIdAndUpdate(userId, {
     $push: {
       exercises: {
