@@ -130,47 +130,50 @@ app.get("/api/exercise/log", (req, res) => {
   };
 
   const isDateValid = date => {
-    // more than 29 days in February during leap year
+    if (date) {
+      // more than 29 days in February during leap year
     // or more than 28 days in February during common year
     // is invalid date and a negative date is invalid
-    if (isLeapYear(date.getFullYear()) && (date.getMonth() + 1) === 2) {
-      if (date.getDate() > 29) {
+      if (isLeapYear(date.getFullYear()) && (date.getMonth() + 1) === 2) {
+        if (date.getDate() > 29) {
+          return false;
+        }
+      } else {
+        if (date.getDate() > 28) {
+          return false;
+        }
+      }
+
+      if (date.getDate() < 1) {
         return false;
       }
-    } else {
-      if (date.getDate() > 28) {
-        return false;
-      }
-    }
 
-    if (date.getDate() < 1) {
-      return false;
-    }
-
-    // more than 31 days in these months is invalid
-    // January, March, May, July, August, October, December
-    if ((date.getMonth() + 1) === 1 || (date.getMonth() + 1) === 3 || (date.getMonth() + 1) === 7 ||
+      // more than 31 days in these months is invalid
+      // January, March, May, July, August, October, December
+      if ((date.getMonth() + 1) === 1 || (date.getMonth() + 1) === 3 || (date.getMonth() + 1) === 7 ||
     (date.getMonth() + 1) === 8 || (date.getMongth() + 1) === 10 || (date.getMonth() + 1) === 12) {
-      if (date.getDate() > 31) {
-        return false;
-      }
+        if (date.getDate() > 31) {
+          return false;
+        }
       // more than 30 days in these months is invalid
       // April, June, September, October, December
-    } else if ((date.getMonth() + 1) === 4 || (date.getMonth() + 1) === 6 ||
+      } else if ((date.getMonth() + 1) === 4 || (date.getMonth() + 1) === 6 ||
     (date.getMonth() + 1) === 9 || (date.getMonth() + 1) === 11) {
-      if (date.getDate() > 30) {
+        if (date.getDate() > 30) {
+          return false;
+        }
+      }
+
+      if ((date.getMonth() + 1) < 0 || (date.getMonth() + 1) > 12) {
         return false;
       }
-    }
 
-    if ((date.getMonth() + 1) < 0 || (date.getMonth() + 1) > 12) {
-      return false;
+      return true;
     }
-
-    return true;
+    return false;
   };
 
-  User.findById(userId).limit(logLimit).exec((err, foundUser) => {
+  User.findById(userId, (err, foundUser) => {
     if (err) {
       console.log(err);
       res.json({ error: err });
@@ -186,11 +189,13 @@ app.get("/api/exercise/log", (req, res) => {
           return true;
         });
 
+        const slicedExercises = filteredExercises.slice(0, logLimit);
+
         res.json({
           username: foundUser.username,
           _id: foundUser._id,
-          log: filteredExercises,
-          count: filteredExercises.length + 1
+          log: slicedExercises,
+          count: slicedExercises.length + 1
         });
       } else {
         console.log("from date and/or to date is/are invalid");
