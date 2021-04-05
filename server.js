@@ -11,7 +11,9 @@ mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
   username: { type: String, unique: true }, // can't have someone register more than once
-  exercises: { type: Array }
+  description: { type: String },
+  duration: { type: Number },
+  date: { type: Date }
 });
 
 const User = mongoose.model("user", userSchema);
@@ -28,28 +30,34 @@ app.use(bodyParser.json());
 app.post("/api/exercise/new-user", (req, res) => {
   const username = req.body.username;
 
-  const user = new User({
-    username: username
-  });
-
   User.findOne({ username: username }, (err, foundUser) => {
     if (err) {
       console.log(err);
     }
 
-    if (!foundUser) {
+    if (foundUser) {
+      res.json({
+        username: foundUser.username,
+        _id: foundUser._id
+      });
+    } else {
+      const user = new User({
+        username: username
+      });
+
       user.save((err, user) => {
         if (err) {
           console.log(err);
+          return res.status(500).send("unable to add user");
         }
         console.log(`user ${user.username} saved to database!`);
+
+        res.json({
+          username: user.username,
+          _id: user._id
+        });
       });
     }
-
-    res.json({
-      username: user.username,
-      _id: user._id
-    });
   });
 });
 
@@ -63,12 +71,10 @@ app.post("/api/exercise/add", (req, res) => {
   const reqDate = new Date(req.body.date);
   const date = reqDate.toDateString() ? reqDate.toDateString() : currentDate.toDateString();
   User.findByIdAndUpdate(userId, {
-    $push: {
-      exercises: {
-        description: description,
-        duration: duration,
-        date: date
-      }
+    $set: {
+      description: description,
+      duration: duration,
+      date: date
     }
   }, { new: true, useFindAndModify: false }, (err, foundUser) => {
     if (err) {
@@ -80,7 +86,9 @@ app.post("/api/exercise/add", (req, res) => {
       res.json({
         username: foundUser.username,
         _id: foundUser._id,
-        exercises: foundUser.exercises
+        description: description,
+        duration: duration,
+        date: date
       });
     }
   });
