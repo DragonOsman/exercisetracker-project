@@ -113,10 +113,10 @@ app.get("/api/exercise/users", (req, res) => {
 });
 
 app.get("/api/exercise/log", (req, res) => {
-  const userId = req.params.userId;
-  const fromDate = new Date(req.params.from);
-  const toDate = new Date(req.params.to);
-  const logLimit = Number(req.params.limit);
+  const userId = req.query.userId;
+  const fromDate = new Date(req.query.from);
+  const toDate = new Date(req.query.to);
+  const logLimit = Number(req.query.limit);
 
   const isLeapYear = year => {
     if (year % 4 === 0) {
@@ -187,7 +187,9 @@ app.get("/api/exercise/log", (req, res) => {
         });
 
         res.json({
-          exercises: filteredExercises,
+          username: foundUser.username,
+          _id: foundUser._id,
+          log: filteredExercises,
           count: filteredExercises.length + 1
         });
       } else {
