@@ -67,7 +67,7 @@ app.post("/api/exercise/add", (req, res) => {
 
   // use date provided by user or use current date
   const reqDate = new Date(req.body.date);
-  const date = reqDate.toDateString() ? reqDate.toDateString() : currentDate.toDateString();
+  const date = reqDate ? reqDate.toDateString() : currentDate.toDateString();
   User.findByIdAndUpdate(userId, {
     $push: {
       exercises: {
@@ -113,10 +113,18 @@ app.get("/api/exercise/users", (req, res) => {
 });
 
 app.get("/api/exercise/log", (req, res) => {
+  const makeTwoDigits = number => {
+    return number < 10
+      ? `0${number}`
+      : `${number}`;
+  };
+  const formatDate = date => {
+    return `${date.getFullYear()}-${makeTwoDigits(date.getMonth())}-${makeTwoDigits(date.getDate())}`;
+  };
   const userId = req.query.userId;
-  const fromDate = new Date(req.query.from);
-  const toDate = new Date(req.query.to);
-  const logLimit = Number(req.query.limit);
+  const fromDate = req.query.from ? formatDate(new Date(req.query.from)) : undefined;
+  const toDate = req.query.to ? formatDate(new Date(req.query.to)) : undefined;
+  const logLimit = req.query.limit ? Number(req.query.limit) : undefined;
 
   const isLeapYear = year => {
     if (year % 4 === 0) {
@@ -130,47 +138,44 @@ app.get("/api/exercise/log", (req, res) => {
   };
 
   const isDateValid = date => {
-    if (date) {
-      // more than 29 days in February during leap year
+    // more than 29 days in February during leap year
     // or more than 28 days in February during common year
     // is invalid date and a negative date is invalid
-      if (isLeapYear(date.getFullYear()) && (date.getMonth() + 1) === 2) {
-        if (date.getDate() > 29) {
-          return false;
-        }
-      } else {
-        if (date.getDate() > 28) {
-          return false;
-        }
-      }
-
-      if (date.getDate() < 1) {
+    if (isLeapYear(date.getFullYear()) && (date.getMonth() + 1) === 2) {
+      if (date.getDate() > 29) {
         return false;
       }
-
-      // more than 31 days in these months is invalid
-      // January, March, May, July, August, October, December
-      if ((date.getMonth() + 1) === 1 || (date.getMonth() + 1) === 3 || (date.getMonth() + 1) === 7 ||
-    (date.getMonth() + 1) === 8 || (date.getMongth() + 1) === 10 || (date.getMonth() + 1) === 12) {
-        if (date.getDate() > 31) {
-          return false;
-        }
-      // more than 30 days in these months is invalid
-      // April, June, September, October, December
-      } else if ((date.getMonth() + 1) === 4 || (date.getMonth() + 1) === 6 ||
-    (date.getMonth() + 1) === 9 || (date.getMonth() + 1) === 11) {
-        if (date.getDate() > 30) {
-          return false;
-        }
-      }
-
-      if ((date.getMonth() + 1) < 0 || (date.getMonth() + 1) > 12) {
+    } else {
+      if (date.getDate() > 28) {
         return false;
       }
-
-      return true;
     }
-    return false;
+
+    if (date.getDate() < 1) {
+      return false;
+    }
+
+    // more than 31 days in these months is invalid
+    // January, March, May, July, August, October, December
+    if ((date.getMonth() + 1) === 1 || (date.getMonth() + 1) === 3 || (date.getMonth() + 1) === 7 ||
+  (date.getMonth() + 1) === 8 || (date.getMongth() + 1) === 10 || (date.getMonth() + 1) === 12) {
+      if (date.getDate() > 31) {
+        return false;
+      }
+    // more than 30 days in these months is invalid
+    // April, June, September, October, December
+    } else if ((date.getMonth() + 1) === 4 || (date.getMonth() + 1) === 6 ||
+  (date.getMonth() + 1) === 9 || (date.getMonth() + 1) === 11) {
+      if (date.getDate() > 30) {
+        return false;
+      }
+    }
+
+    if ((date.getMonth() + 1) < 0 || (date.getMonth() + 1) > 12) {
+      return false;
+    }
+
+    return true;
   };
 
   User.findById(userId, (err, foundUser) => {
@@ -179,17 +184,45 @@ app.get("/api/exercise/log", (req, res) => {
       res.json({ error: err });
     }
 
+    let filteredExercises = [];
     if (foundUser) {
-      let filteredExercises = [];
-      if (isDateValid(fromDate) && isDateValid(toDate)) {
-        filteredExercises = foundUser.exercises.map(exercise => {
-          if (!(exercise.date >= fromDate && exercise.date <= toDate)) {
-            return false;
-          }
-          return true;
+      // when a log limit, a from date, nor a to date is provided
+      if (!logLimit && !fromDate && !toDate) {
+        res.json({
+          username: foundUser.username,
+          _id: foundUser._id,
+          log: foundUser.exercises,
+          count: foundUser.exercises.length + 1
         });
+        // when all three are provided
+      } else if (logLimit !== undefined && fromDate !== undefined && toDate !== undefined) {
+        if (isDateValid(fromDate) && isDateValid(toDate)) {
+          filteredExercises = foundUser.exercises.filter(exercise => {
+            if (!(exercise.date >= fromDate && exercise.date <= toDate)) {
+              return false;
+            }
+            return true;
+          });
 
-        const slicedExercises = filteredExercises.slice(0, logLimit);
+          let slicedExercises = [];
+          if (logLimit < filteredExercises.length - 1) {
+            slicedExercises = filteredExercises.slice(0, logLimit);
+          } else {
+            slicedExercises = filteredExercises.slice(0);
+          }
+
+          res.json({
+            username: foundUser.username,
+            _id: foundUser._id,
+            log: slicedExercises,
+            count: slicedExercises.length + 1
+          });
+        } else {
+          console.log("from date and/or to date is/are invalid");
+        }
+        // when only a log limit is provided
+      } else if (logLimit !== undefined && !toDate && !fromDate) {
+        const slicedExercises = foundUser.exercises.slice(0, logLimit);
 
         res.json({
           username: foundUser.username,
@@ -197,8 +230,42 @@ app.get("/api/exercise/log", (req, res) => {
           log: slicedExercises,
           count: slicedExercises.length + 1
         });
-      } else {
-        console.log("from date and/or to date is/are invalid");
+        // when a log limit and a from date is provided but a to date is not
+      } else if (logLimit !== undefined && !toDate && fromDate !== undefined) {
+        if (isDateValid(fromDate)) {
+          filteredExercises = foundUser.exercises.filter(exercise => {
+            if (!(exercise.date >= fromDate)) {
+              return false;
+            }
+            return true;
+          });
+
+          const slicedExercises = filteredExercises.slice(0, logLimit);
+
+          res.json({
+            username: foundUser.username,
+            _id: foundUser._id,
+            log: slicedExercises,
+            count: slicedExercises.length + 1
+          });
+        }
+        // when a log limit is not provided but a to date and a from date are
+      } else if (!logLimit && toDate !== undefined && fromDate !== undefined) {
+        if (isDateValid(fromDate) && isDateValid(toDate)) {
+          filteredExercises = foundUser.exercises.filter(exercise => {
+            if (!(exercise.date >= fromDate && exercise.date <= toDate)) {
+              return false;
+            }
+            return true;
+          });
+
+          res.json({
+            username: foundUser.username,
+            _id: foundUser._id,
+            log: filteredExercises,
+            count: filteredExercises.length + 1
+          });
+        }
       }
     }
   });
