@@ -5,6 +5,7 @@ require("dotenv").config();
 const path = require("path");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const moment = require("moment");
 
 mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -113,17 +114,9 @@ app.get("/api/exercise/users", (req, res) => {
 });
 
 app.get("/api/exercise/log", (req, res) => {
-  const makeTwoDigits = number => {
-    return number < 10
-      ? `0${number}`
-      : `${number}`;
-  };
-  const formatDate = date => {
-    return `${date.getFullYear()}-${makeTwoDigits(date.getMonth())}-${makeTwoDigits(date.getDate())}`;
-  };
   const userId = req.query.userId;
-  const fromDate = req.query.from ? formatDate(new Date(req.query.from)) : undefined;
-  const toDate = req.query.to ? formatDate(new Date(req.query.to)) : undefined;
+  const fromDate = req.query.from ? req.query.from : undefined;
+  const toDate = req.query.to ? req.query.to : undefined;
   const logLimit = req.query.limit ? Number(req.query.limit) : undefined;
 
   const isLeapYear = year => {
@@ -138,40 +131,45 @@ app.get("/api/exercise/log", (req, res) => {
   };
 
   const isDateValid = date => {
+    const dateObj = new Date(date);
     // more than 29 days in February during leap year
     // or more than 28 days in February during common year
     // is invalid date and a negative date is invalid
-    if (isLeapYear(date.getFullYear()) && (date.getMonth() + 1) === 2) {
+    if (isLeapYear(dateObj.getFullYear()) && (dateObj.getMonth() + 1) === 2) {
       if (date.getDate() > 29) {
         return false;
       }
     } else {
-      if (date.getDate() > 28) {
+      if (dateObj.getDate() > 28) {
         return false;
       }
     }
 
-    if (date.getDate() < 1) {
+    if (dateObj.getDate() < 1) {
       return false;
     }
 
     // more than 31 days in these months is invalid
     // January, March, May, July, August, October, December
-    if ((date.getMonth() + 1) === 1 || (date.getMonth() + 1) === 3 || (date.getMonth() + 1) === 7 ||
-  (date.getMonth() + 1) === 8 || (date.getMongth() + 1) === 10 || (date.getMonth() + 1) === 12) {
+    if ((dateObj.getMonth() + 1) === 1 || (dateObj.getMonth() + 1) === 3 || (dateObj.getMonth() + 1) === 7 ||
+  (dateObj.getMonth() + 1) === 8 || (dateObj.getMongth() + 1) === 10 || (dateObj.getMonth() + 1) === 12) {
       if (date.getDate() > 31) {
         return false;
       }
     // more than 30 days in these months is invalid
     // April, June, September, October, December
-    } else if ((date.getMonth() + 1) === 4 || (date.getMonth() + 1) === 6 ||
-  (date.getMonth() + 1) === 9 || (date.getMonth() + 1) === 11) {
+    } else if ((dateObj.getMonth() + 1) === 4 || (dateObj.getMonth() + 1) === 6 ||
+  (dateObj.getMonth() + 1) === 9 || (dateObj.getMonth() + 1) === 11) {
       if (date.getDate() > 30) {
         return false;
       }
     }
 
-    if ((date.getMonth() + 1) < 0 || (date.getMonth() + 1) > 12) {
+    if ((dateObj.getMonth() + 1) < 0 || (dateObj.getMonth() + 1) > 12) {
+      return false;
+    }
+
+    if (!moment(date, "YYYY-MM-DD", true).isValid()) {
       return false;
     }
 
