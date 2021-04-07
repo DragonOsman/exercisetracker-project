@@ -11,8 +11,8 @@
 		"dotenv": "^8.2.0",
 		"express": "^4.17.1",
 		"moment": "^2.29.1",
-		"mongodb": "^3.6.5",
-		"mongoose": "^5.12.2"
+		"mongodb": "^3.6.6",
+		"mongoose": "^5.12.3"
 	},
 	"repository": {
 		"url": "https://github.com/freeCodeCamp/boilerplate-project-exercisetracker"
