@@ -115,8 +115,8 @@ app.get("/api/exercise/users", (req, res) => {
 
 app.get("/api/exercise/log", (req, res) => {
   const userId = req.query.userId;
-  const fromDate = req.query.from ? req.query.from : undefined;
-  const toDate = req.query.to ? req.query.to : undefined;
+  const fromDateStr = req.query.from ? req.query.from : undefined;
+  const toDateStr = req.query.to ? req.query.to : undefined;
   const logLimit = req.query.limit ? Number(req.query.limit) : undefined;
 
   const isLeapYear = year => {
@@ -183,9 +183,11 @@ app.get("/api/exercise/log", (req, res) => {
     }
 
     let filteredExercises = [];
+    const fromDateObj = new Date(fromDateStr);
+    const toDateObj = new Date(toDateStr);
     if (foundUser) {
       // when a log limit, a from date, nor a to date is provided
-      if (!logLimit && !fromDate && !toDate) {
+      if (!logLimit && !fromDateStr && !toDateStr) {
         res.json({
           username: foundUser.username,
           _id: foundUser._id,
@@ -193,10 +195,10 @@ app.get("/api/exercise/log", (req, res) => {
           count: foundUser.exercises.length + 1
         });
         // when all three are provided
-      } else if (logLimit !== undefined && fromDate !== undefined && toDate !== undefined) {
-        if (isDateValid(fromDate) && isDateValid(toDate)) {
+      } else if (logLimit !== undefined && fromDateStr !== undefined && toDateStr !== undefined) {
+        if (isDateValid(fromDateStr) && isDateValid(toDateStr)) {
           filteredExercises = foundUser.exercises.filter(exercise => {
-            if (!(exercise.date >= fromDate && exercise.date <= toDate)) {
+            if (!(exercise.date >= fromDateObj && exercise.date <= toDateObj)) {
               return false;
             }
             return true;
@@ -219,7 +221,7 @@ app.get("/api/exercise/log", (req, res) => {
           console.log("from date and/or to date is/are invalid");
         }
         // when only a log limit is provided
-      } else if (logLimit !== undefined && !toDate && !fromDate) {
+      } else if (logLimit !== undefined && !toDateStr && !fromDateStr) {
         const slicedExercises = foundUser.exercises.slice(0, logLimit);
 
         res.json({
@@ -229,10 +231,10 @@ app.get("/api/exercise/log", (req, res) => {
           count: slicedExercises.length + 1
         });
         // when a log limit and a from date is provided but a to date is not
-      } else if (logLimit !== undefined && !toDate && fromDate !== undefined) {
-        if (isDateValid(fromDate)) {
+      } else if (logLimit !== undefined && !toDateStr && fromDateStr !== undefined) {
+        if (isDateValid(fromDateStr)) {
           filteredExercises = foundUser.exercises.filter(exercise => {
-            if (!(exercise.date >= fromDate)) {
+            if (!(exercise.date >= fromDateObj)) {
               return false;
             }
             return true;
@@ -248,10 +250,10 @@ app.get("/api/exercise/log", (req, res) => {
           });
         }
         // when a log limit is not provided but a to date and a from date are
-      } else if (!logLimit && toDate !== undefined && fromDate !== undefined) {
-        if (isDateValid(fromDate) && isDateValid(toDate)) {
+      } else if (!logLimit && toDateStr !== undefined && fromDateStr !== undefined) {
+        if (isDateValid(fromDateStr) && isDateValid(toDateStr)) {
           filteredExercises = foundUser.exercises.filter(exercise => {
-            if (!(exercise.date >= fromDate && exercise.date <= toDate)) {
+            if (!(exercise.date >= fromDateObj && exercise.date <= toDateObj)) {
               return false;
             }
             return true;
