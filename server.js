@@ -47,7 +47,7 @@ app.post("/api/exercise/new-user", (req, res) => {
       user.save((err, user) => {
         if (err) {
           console.log(err);
-          return res.status(500).send("unable to add user");
+          return res.status(500).send(`error: ${err}`);
         }
         console.log(`user ${user.username} saved to database!`);
 
