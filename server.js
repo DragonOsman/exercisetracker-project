@@ -67,32 +67,38 @@ app.post("/api/exercise/add", (req, res) => {
   const currentDate = new Date();
 
   // use date provided by user or use current date
-  const reqDate = new Date(req.body.date);
-  const date = reqDate ? reqDate.toDateString() : currentDate.toDateString();
-  User.findByIdAndUpdate(userId, {
-    $push: {
-      exercises: {
-        description: description,
-        duration: duration,
-        date: date
-      }
-    }
-  }, { new: true, useFindAndModify: false }, (err, foundUser) => {
-    if (err) {
-      console.log(err);
-      res.json({ error: err });
-    }
+  let reqDate;
+  if (req.body.date !== "" || req.body.date !== undefined) {
+    reqDate = new Date(req.body.date);
+  }
 
-    if (foundUser) {
-      res.json({
-        username: foundUser.username,
-        _id: foundUser._id,
-        description: description,
-        duration: duration,
-        date: date
-      });
-    }
-  });
+  if (reqDate.toString() !== "Invalid Date") {
+    const date = reqDate ? reqDate.toDateString() : currentDate.toDateString();
+    User.findByIdAndUpdate(userId, {
+      $push: {
+        exercises: {
+          description: description,
+          duration: duration,
+          date: date
+        }
+      }
+    }, { new: true, useFindAndModify: false }, (err, foundUser) => {
+      if (err) {
+        console.log(err);
+        res.json({ error: err });
+      }
+
+      if (foundUser) {
+        res.json({
+          username: foundUser.username,
+          _id: foundUser._id,
+          description: description,
+          duration: duration,
+          date: date
+        });
+      }
+    });
+  }
 });
 
 app.get("/api/exercise/users", (req, res) => {
