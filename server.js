@@ -120,98 +120,109 @@ app.get("/api/exercise/log", (req, res) => {
   const toDate = (req.query.to) ? new Date(req.query.to) : undefined;
   const logLimit = (req.query.limit) ? Number(req.query.limit) : undefined;
 
-  const isLeapYear = year => {
-    if (year % 4 === 0) {
-      if (year % 100 === 0) {
-        if (year % 400 === 0) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  const isDateValid = date => {
-    // more than 29 days in February during leap year
-    // or more than 28 days in February during common year
-    // is invalid date and a negative date is invalid
-    if (isLeapYear(date.getFullYear()) && (date.getMonth() + 1) === 2) {
-      if (date.getDate() > 29) {
-        return false;
-      }
-    } else {
-      if (date.getDate() > 28) {
-        return false;
-      }
-    }
-
-    if (date.getDate() < 1) {
-      return false;
-    }
-
-    // more than 31 days in these months is invalid
-    // January, March, May, July, August, October, December
-    if ((date.getMonth() + 1) === 1 || (date.getMonth() + 1) === 3 || (date.getMonth() + 1) === 7 ||
-  (date.getMonth() + 1) === 8 || (date.getMongth() + 1) === 10 || (date.getMonth() + 1) === 12) {
-      if (date.getDate() > 31) {
-        return false;
-      }
-    // more than 30 days in these months is invalid
-    // April, June, September, October, December
-    } else if ((date.getMonth() + 1) === 4 || (date.getMonth() + 1) === 6 ||
-  (date.getMonth() + 1) === 9 || (date.getMonth() + 1) === 11) {
-      if (date.getDate() > 30) {
-        return false;
-      }
-    }
-
-    if ((date.getMonth() + 1) < 0 || (date.getMonth() + 1) > 12) {
-      return false;
-    }
-
-    return true;
-  };
-
   User.findById(userId, (err, foundUser) => {
     if (err) {
       console.log(err);
-      res.json({ error: err });
+      return res.json({ error: err });
     }
 
-    if (foundUser) {
-      if (!logLimit && !fromDate && !toDate) {
+    if (!logLimit && !fromDate && !toDate) {
+      res.json({
+        username: foundUser.username,
+        _id: foundUser._id,
+        log: foundUser.exercises,
+        count: foundUser.exercises.length + 1
+      });
+    } else if (logLimit && fromDate && toDate) {
+      let filteredExercises = [];
+      if (moment(fromDate, "YYYY-MM-DD", true).isValid() &&
+          moment(toDate, "YYYY-MM-DD", true).isValid) {
+        filteredExercises = foundUser.exercises.map(exercise => {
+          if (!(exercise.date >= fromDate && exercise.date <= toDate)) {
+            return false;
+          }
+          return true;
+        });
+
+        let slicedExercises = [];
+        if (logLimit) {
+          slicedExercises = filteredExercises.slice(0, logLimit);
+        } else {
+          slicedExercises = filteredExercises.slice(0);
+        }
+
         res.json({
           username: foundUser.username,
           _id: foundUser._id,
-          log: foundUser.exercises,
-          count: foundUser.exercises.length + 1
+          log: slicedExercises,
+          count: slicedExercises.length + 1
         });
-      } else {
-        let filteredExercises = [];
-        if (isDateValid(fromDate) && isDateValid(toDate)) {
-          filteredExercises = foundUser.exercises.map(exercise => {
-            if (!(exercise.date >= fromDate && exercise.date <= toDate)) {
-              return false;
-            }
-            return true;
-          });
-
-          let slicedExercises = [];
-          if (logLimit) {
-            slicedExercises = filteredExercises.slice(0, logLimit);
-          } else {
-            slicedExercises = filteredExercises.slice(0);
+      }
+    } else if (!logLimit) {
+      let filteredExercises = [];
+      if (moment(fromDate, "YYYY-MM-DD", true).isValid() &&
+          moment(toDate, "YYYY-MM-DD", true).isValid) {
+        filteredExercises = foundUser.exercises.map(exercise => {
+          if (!(exercise.date >= fromDate && exercise.date <= toDate)) {
+            return false;
           }
+          return true;
+        });
 
-          res.json({
-            username: foundUser.username,
-            _id: foundUser._id,
-            log: slicedExercises,
-            count: slicedExercises.length + 1
-          });
+        res.json({
+          username: foundUser.username,
+          _id: foundUser._id,
+          log: filteredExercises,
+          count: filteredExercises.length + 1
+        });
+      }
+    } else if (!fromDate) {
+      let filteredExercises = [];
+      if (moment(toDate, "YYYY-MM-DD", true).isValid) {
+        filteredExercises = foundUser.exercises.map(exercise => {
+          if (!(exercise.date <= toDate)) {
+            return false;
+          }
+          return true;
+        });
+
+        let slicedExercises = [];
+        if (logLimit) {
+          slicedExercises = filteredExercises.slice(0, logLimit);
         } else {
-          console.log("from date and/or to date is/are invalid");
+          slicedExercises = filteredExercises.slice(0);
         }
+
+        res.json({
+          username: foundUser.username,
+          _id: foundUser._id,
+          log: slicedExercises,
+          count: slicedExercises.length + 1
+        });
+      }
+    } else if (!toDate) {
+      let filteredExercises = [];
+      if (moment(fromDate, "YYYY-MM-DD", true).isValid()) {
+        filteredExercises = foundUser.exercises.map(exercise => {
+          if (!(exercise.date >= fromDate)) {
+            return false;
+          }
+          return true;
+        });
+
+        let slicedExercises = [];
+        if (logLimit) {
+          slicedExercises = filteredExercises.slice(0, logLimit);
+        } else {
+          slicedExercises = filteredExercises.slice(0);
+        }
+
+        res.json({
+          username: foundUser.username,
+          _id: foundUser._id,
+          log: slicedExercises,
+          count: slicedExercises.length + 1
+        });
       }
     }
   });
